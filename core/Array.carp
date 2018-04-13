@@ -1,0 +1,145 @@
+(defmodule Array
+
+  (defn reduce [f x xs]
+    (let [total x]
+      (do
+        (for [i 0 (count xs)]
+          (set! total (f &total (nth xs i))))
+        total)))
+
+  (defn first [a]
+    @(Array.nth a 0))
+
+  (defn last [a]
+    @(Array.nth a (Int.dec (Array.count a))))
+
+  (defn = [a b]
+    (if (/= (count a) (count b))
+      false
+      (let-do [eq true]
+        (for [i 0 (count a)]
+          (when (/= @(nth a i) @(nth b i))
+            (do
+              (set! eq false)
+              (break))))
+        eq)))
+
+  (defn maximum [xs]
+    (let [result (first xs)
+          n (count xs)]
+      (do
+        (for [i 1 n]
+          (let [x @(nth xs i)]
+            (if (< result x)
+              (set! result x)
+              ())))
+        result)))
+
+  (defn minimum [xs]
+    (let [result (first xs)
+          n (count xs)]
+      (do
+        (for [i 1 n]
+          (let [x @(nth xs i)]
+            (if (> result x)
+              (set! result x)
+              ())))
+        result)))
+
+  (defn sum [xs]
+    (Array.reduce add-ref (zero) xs))
+
+  (defn subarray [xs start-index end-index]
+    (let [result []]
+      (do
+        (for [i start-index end-index]
+          (set! result (push-back result @(nth xs i))))
+        result)))
+
+  (defn prefix-array [xs end-index]
+    (subarray xs 0 end-index))
+
+  (defn suffix-array [xs start-index]
+    (subarray xs start-index (count xs)))
+
+  (defn reverse [a]
+    (let-do [i 0
+             j (Int.dec (count &a))]
+      (while (Int.< i j)
+        (let-do [tmp @(nth &a i)]
+          (aset! &a i @(nth &a j))
+          (set! i (Int.inc i))
+          (aset! &a j tmp)
+          (set! j (Int.dec j))))
+      a))
+
+  (defn index-of [a e]
+    (let-do [idx -1]
+      (for [i 0 (count a)]
+        (when (= (nth a i) &e)
+          (do
+            (set! idx i)
+            (break))))
+      idx))
+
+  (defn element-count [a e]
+    (let-do [c 0]
+      (for [i 0 (count a)]
+        (when (= e (nth a i)) (set! c (Int.inc c))))
+      c))
+
+  (defn aupdate [a i f]
+    (let [new-value (f (nth &a i))]
+      (aset a i new-value)))
+
+  (defn aupdate! [a i f]
+    (aset! a i (f (nth a i))))
+
+  (defn swap [a i j]
+    (let [x @(nth &a i)
+          y @(nth &a j)]
+      (aset (aset a i y) j x)))
+
+  (defn swap! [a i j]
+    (let-do [x @(nth a i)
+             y @(nth a j)]
+      (aset! a i y)
+      (aset! a j x)))
+
+  ; cannot use for, because we want also be able to go downwards
+  (defn range [start end step]
+    (let-do [x (allocate (Int.inc (Int.abs (/ (- end start) step))))
+             e start
+             i 0
+             op (if (< start end) <= >=)]
+      (while (op e end)
+        (do
+          (aset! &x i e)
+          (set! i (Int.inc i))
+          (set! e (+ e step))))
+      x))
+
+  (defn sort [a]
+    (sort-with a cmp))
+
+  (defn repeat [n f]
+    (let-do [a (allocate n)]
+      (for [i 0 n] (aset-uninitialized! &a i (f)))
+      a))
+
+  (defn repeat-indexed [n f]
+    (let-do [a (allocate n)]
+      (for [i 0 n] (aset-uninitialized! &a i (f i)))
+      a))
+
+  (defn replicate [n e]
+    (let-do [a (allocate n)]
+      (for [i 0 n] (aset-uninitialized! &a i @e))
+      a))
+
+  (defn copy-map [f a]
+    (let-do [na (allocate (count a))]
+      (for [i 0 (count a)]
+        (aset-uninitialized! &na i (f (nth a i))))
+      na))
+)

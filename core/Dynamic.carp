@@ -1,0 +1,19 @@
+(defmodule Dynamic
+  ;; Functions for doing things at the REPL and during compile time.
+
+  (defdynamic inc [x]
+    (+ x 1))
+
+  (defdynamic dec [x]
+    (- x 1))
+
+  )
+
+
+;; The following functions are not put into a module for now:
+
+(defdynamic add-cflag [flag]
+  (Project.config "cflag" flag))
+
+(defdynamic add-lib [lib]
+  (Project.config "libflag" lib))

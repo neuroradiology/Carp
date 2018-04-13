@@ -1,0 +1,81 @@
+(use Int)
+
+(load "Test.carp")
+(use Test)
+
+(defn break-test []
+  (let [x 0]
+    (do
+      (while (< x 10)
+        (if (> x 4)
+          (break)
+          (set! x (inc x))))
+      x)))
+
+(defn when-test-true []
+  (let [x 0]
+    (do
+      (when true
+        (set! x 5))
+      x)))
+
+(defn when-test-false []
+  (let [x 0]
+    (do
+      (when false
+        (set! x 5))
+      x)))
+
+(defn unless-test-true []
+  (let [x 0]
+    (do
+      (unless true
+        (set! x 5))
+      x)))
+
+(defn unless-test-false []
+  (let [x 0]
+    (do
+      (unless false
+        (set! x 5))
+      x)))
+
+(defn all-eq [a b]
+  (if (/= (Array.count a) (Array.count b))
+    false
+    (let [eq true]
+      (do
+        (for [i 0 (Array.count a)]
+          (if (/= @(Array.nth a i) @(Array.nth b i))
+            (set! eq false)
+            ()))
+        eq))))
+
+(defn main []
+  (with-test test
+    (assert-equal test
+                  5
+                  (break-test)
+                  "break works as expected"
+    )
+    (assert-equal test
+                  5
+                  (when-test-true)
+                  "when works as expected when true"
+    )
+    (assert-equal test
+                  0
+                  (when-test-false)
+                  "when works as expected when false"
+    )
+    (assert-equal test
+                  0
+                  (unless-test-true)
+                  "unless works as expected when true"
+    )
+    (assert-equal test
+                  5
+                  (unless-test-false)
+                  "unless works as expected when false"
+    )
+    (print-test-results test)))

@@ -1,0 +1,286 @@
+;; Defining the meta data macros early so that they can be used by all the other code.
+
+(meta-set! doc "doc" "Set documentation for a binding.")
+(defmacro doc [name string]
+  (list 'meta-set! name "doc" string))
+
+(doc print-doc "Print the documentation for a binding.")
+(defmacro print-doc [name]
+  (list 'macro-log (list 'meta name "doc")))
+
+(doc sig "Annotate a binding with the desired signature.")
+(defmacro sig [name signature]
+  (list 'meta-set! name "sig" signature))
+
+(doc print-sig "Print the annotated signature for a binding.")
+(defmacro print-sig [name]
+  (list 'macro-log (list 'meta name "sig")))
+
+(doc hide "Mark a binding as hidden, this will make it not print with the 'info' command.")
+(defmacro hidden [name]
+  (list 'meta-set! name "hidden" true))
+
+(doc private "Mark a binding as private, this will make it inaccessible from other modules.")
+(defmacro private [name]
+  (list 'meta-set! name "private" true))
+
+(doc private? "Is this binding private?")
+(defmacro private? [name]
+  (list 'not (list '= () (list 'meta name "private")))) ;; TODO: This is buggy, will report true when meta is set to 'false'!
+
+(doc hidden? "Is this binding hidden?")
+(defmacro hidden? [name]
+  (list 'not (list '= () (list 'meta name "hidden")))) ;; TODO: This is buggy, will report true when meta is set to 'false'!
+
+
+(defmodule Dynamic
+  (defdynamic caar [pair] (car (car pair)))
+  (defdynamic cadr [pair] (car (cdr pair)))
+  (defdynamic cdar [pair] (cdr (car pair)))
+  (defdynamic cddr [pair] (cdr (cdr pair)))
+  (defdynamic caaar [pair] (car (car (car pair))))
+  (defdynamic caadr [pair] (car (car (cdr pair))))
+  (defdynamic cadar [pair] (car (cdr (car pair))))
+  (defdynamic cdaar [pair] (cdr (car (car pair))))
+  (defdynamic caddr [pair] (car (cdr (cdr pair))))
+  (defdynamic cdadr [pair] (cdr (car (cdr pair))))
+  (defdynamic cddar [pair] (cdr (cdr (car pair))))
+  (defdynamic cdddr [pair] (cdr (cdr (cdr pair))))
+  (defdynamic caaaar [pair] (car (car (car (car pair)))))
+  (defdynamic caaadr [pair] (car (car (car (cdr pair)))))
+  (defdynamic caadar [pair] (car (car (cdr (car pair)))))
+  (defdynamic caaddr [pair] (car (car (cdr (cdr pair)))))
+  (defdynamic cadaar [pair] (car (cdr (car (car pair)))))
+  (defdynamic cadadr [pair] (car (cdr (car (cdr pair)))))
+  (defdynamic caddar [pair] (car (cdr (cdr (car pair)))))
+  (defdynamic cadddr [pair] (car (cdr (cdr (cdr pair)))))
+  (defdynamic cdaaar [pair] (cdr (car (car (car pair)))))
+  (defdynamic cdaadr [pair] (cdr (car (car (cdr pair)))))
+  (defdynamic cdadar [pair] (cdr (car (cdr (car pair)))))
+  (defdynamic cdaddr [pair] (cdr (car (cdr (cdr pair)))))
+  (defdynamic cddaar [pair] (cdr (cdr (car (car pair)))))
+  (defdynamic cddadr [pair] (cdr (cdr (car (cdr pair)))))
+  (defdynamic cdddar [pair] (cdr (cdr (cdr (car pair)))))
+  (defdynamic cddddr [pair] (cdr (cdr (cdr (cdr pair)))))
+
+  (defdynamic eval-internal [form]
+    (list 'do
+          (list 'defn 'main [] (list 'IO.println* form))
+          (list 'build)
+          (list 'run)))
+
+  (defmacro eval [form]
+    (eval-internal form))
+
+  (defmacro e [form]
+    (eval-internal form))
+
+  )
+
+(defdynamic cond-internal [xs]
+  (if (= (count xs) 0)
+    (list)
+    (if (= (count xs) 2)
+      (macro-error "cond has even number of branches; add an else branch")
+      (if (= (count xs) 1)
+        (car xs)
+        (list
+         'if
+         (car xs)
+         (cadr xs)
+         (cond-internal (cddr xs)))))))
+
+(defmacro cond [:rest xs]
+  (cond-internal xs))
+
+(defmacro for [settings :rest body] ;; settings = variable, from, to, <step>
+  (if (> (count body) 1)
+    (macro-error "Warning: the body of the 'for' loop can only contain one expression")
+    (list
+     'let
+     (array (car settings) (cadr settings))
+     (list
+      'while
+      (list 'Int.< (car settings) (caddr settings))
+      (list 'do
+            (if (= (count body) 0)
+              ()
+              (if (list? body)
+                (car body)
+                body))
+            (list
+             'set! (car settings)
+             (list 'Int.+
+                   (car settings)
+                   (if (= 4 (count settings)) ;; optional arg for step
+                     (cadddr settings)
+                     1))))))))
+
+(defmacro refstr [x]
+  (list 'ref
+        (list 'str x)))
+
+;; Old foreach, what's a better name for this? (it's just 'map' with side effects)
+;; (defmacro foreach [f xs]
+;;   (list 'for ['i 0 (list 'Array.count (list 'ref xs))]
+;;         (list f (list 'Array.nth (list 'ref xs) 'i))))
+
+(defdynamic foreach-internal [var xs expr]
+  (list 'let ['xs xs
+              'len (list 'Array.count 'xs)]
+        (list 'for ['i 0 'len]
+              (list 'let [var (list 'Array.nth 'xs 'i)]
+                    expr))))
+
+(defmacro foreach [binding expr]
+  (if (array? binding)
+    (foreach-internal (car binding) (cadr binding) expr)
+    (macro-error "Binding has to be an array.")))
+
+(defdynamic thread-first-internal [xs]
+  (if (= (count xs) 2)
+    (if (list? (last xs))
+      (cons (caadr xs)
+            (cons (car xs)
+                  (cdadr xs)))
+      (list (cadr xs) (car xs)))
+    (if (list? (last xs))
+      (append
+       (list
+        (car (last xs))
+        (thread-first-internal (all-but-last xs)))
+       (cdr (last xs)))
+      (list (last xs) (thread-first-internal (all-but-last xs))))))
+
+(defdynamic thread-last-internal [xs]
+  (if (= (count xs) 2)
+    (if (list? (last xs))
+      (cons-last (car xs) (last xs))
+      (list (cadr xs) (car xs)))
+    (if (list? (last xs))
+      (cons-last (thread-last-internal (all-but-last xs)) (last xs))
+      (list (last xs) (thread-last-internal (all-but-last xs))))))
+
+(defmacro => [:rest forms]
+  (thread-first-internal forms))
+
+(defmacro ==> [:rest forms]
+  (thread-last-internal forms))
+
+(defmacro swap! [x y]
+  (list 'let (array 'tmp y) (list 'do (list 'set! y x) (list 'set! x 'tmp))))
+
+(defmacro update! [x f]
+  (list 'set! x (list f x)))
+
+(defmacro mac-only [:rest forms]
+  (if (= "darwin" (os))
+    (cons (quote do) forms)
+    ()))
+
+(defmacro linux-only [:rest forms]
+  (if (= "linux" (os))
+    (cons (quote do) forms)
+    ()))
+
+(defmacro windows-only [:rest forms]
+  (if (= "windows" (os))
+    (cons (quote do) forms)
+    ()))
+
+(defmacro not-on-windows [:rest forms]
+  (if (not (= "windows" (os)))
+    (cons (quote do) forms)
+    ()))
+
+(defdynamic use-all-fn [names]
+  (if (= (count names) 0)
+    (macro-error "Trying to call use-all without arguments")
+    (if (= (count names) 1)
+      (list (list 'use (car names)))
+      (cons (list 'use (car names)) (use-all-fn (cdr names))))));(use-all (cdr names))))))
+
+(defmacro use-all [:rest names]
+  (cons 'do (use-all-fn names)))
+
+(defmacro load-and-use [name]
+  (list 'do
+        (list 'load (str name ".carp"))
+        (list 'use name)))
+
+(defmacro when [condition form]
+  (list 'if condition form (list)))
+
+(defmacro unless [condition form]
+  (list 'if condition (list) form))
+
+(defmacro let-do [bindings :rest forms]
+  (list 'let bindings
+    (cons 'do forms)))
+
+(defmacro defn-do [name arguments :rest body]
+  (list 'defn name arguments (cons 'do body)))
+
+(defmacro comment [:rest forms]
+  ())
+
+(defmacro forever-do [:rest forms]
+  (list 'while true (cons 'do forms)))
+
+(defdynamic case-internal [name xs]
+  (if (= (count xs) 0)
+    (list)
+    (if (= (count xs) 2)
+      (macro-error "case has even number of branches; add an else branch")
+      (if (= (count xs) 1)
+        (car xs)
+        (list 'if
+         (list '= name (car xs))
+          (cadr xs)
+          (case-internal name (cddr xs)))))))
+
+(defmacro case [name :rest forms]
+  (case-internal name forms))
+
+(defdynamic build-vararg [fn forms]
+  (if (= (count forms) 0)
+    (macro-error "vararg macro needs at least one argument")
+    (if (= (count forms) 1)
+      (car forms)
+      (list fn (car forms) (build-vararg fn (cdr forms))))))
+
+(defmacro and* [:rest forms]
+  (build-vararg 'and forms))
+
+(defmacro or* [:rest forms]
+  (build-vararg 'or forms))
+
+(defdynamic build-str* [forms]
+  (if (= (count forms) 0)
+    (list "")
+    (if (= (count forms) 1)
+      (list 'str (car forms))
+      (list 'String.append (list 'str (car forms)) (build-str* (cdr forms))))))
+
+(defmacro str* [:rest forms]
+  (build-str* forms))
+
+(defmacro println* [:rest forms]
+  (list 'IO.println (list 'ref (build-str* forms))))
+
+(defmacro print* [:rest forms]
+  (list 'IO.print (list 'ref (build-str* forms))))
+
+(defmacro ignore [form]
+  (list 'let (array '_ form) (list)))
+
+;; Allows inclusion of C headers relative to the Carp file in which this macro is called.
+(defmacro relative-include [file]
+  (list 'local-include
+        (list 'Dynamic.String.join [(list 'Dynamic.String.directory (list 'source-path))
+                                    "/"
+                                    file])))
+
+(defmacro save-docs [:rest modules]
+  ;; A trick to be able to send unquoted symbols to 'save-docs'
+  (list 'save-docs-internal (list 'quote modules)))

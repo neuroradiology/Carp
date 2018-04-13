@@ -1,33 +1,14 @@
 *.dSYM
-a.out
-.DS_Store
+*/.DS_Store
 
-/gl-constants/gl_constants.o
+.stack-work/
 
-/out/*.c
-/out/*.so
-/out/*.h
-/out/*.dll
-/out/*.exp
-/out/*.lib
-/out/*.pdb
-/out/*.ilk
-/out/*.obj
-/out/exe
+/CarpHask-exe.prof
 
-/src/*.o
-
-/bin/carp-repl
-/bin/Release/
-/bin/Debug/
-
-/build/
-/examples/exe
-/src/TAGS
-
-sourcetree.license
-
-.idea/
-temp/
-
-/TAGS
+/out/
+/.DS_Store
+/Carp.prof
+dist/
+/releases
+main.obj
+examples/out

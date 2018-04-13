@@ -2,72 +2,89 @@
 
 [![Join the chat at https://gitter.im/eriksvedang/Carp](https://badges.gitter.im/eriksvedang/Carp.svg)](https://gitter.im/eriksvedang/Carp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-<img src="https://github.com/eriksvedang/Carp/blob/master/img/carp_logo_300_c.png" alt="Logo" align="right" />
+[![Build Status](https://travis-ci.org/carp-lang/Carp.svg?branch=master)](https://travis-ci.org/carp-lang/Carp)
 
-<i>WARNING! This is a research project and a lot of information here might become outdated and misleading without any explanation. Don't use it for anything important just yet!</i>
+<img src="https://github.com/carp-lang/Carp/blob/master/img/carp_logo_300_c.png" alt="Logo" align="right" />
+
+<i>WARNING! This is a research project and a lot of information here might become outdated and misleading without any explanation. Don't use it for anything important!</i>
+
+<i>Update (June 26, 2017): The total rewrite is now live; if you want to look at the old version, it's under the branch named "c" in this repository.</i>
+
+## About
 
 Carp is a small programming language designed to work well for interactive and performance sensitive use cases like games, sound synthesis and visualizations.
 
 The key features of Carp are the following:
 * Automatic and deterministic memory management (no garbage collector or VM)
 * Inferred static types for great speed and reliability
-* Live reloading of code, REPL-driven development, a fun and helpful workflow
-* Ownership tracking enables a functional programming style while still using mutation of cache friendly data structures under the hood
-* No hidden performance penalties – allocation and copying is explicit
-* Very good integration with existing C code
-
+* Ownership tracking enables a functional programming style while still using mutation of cache-friendly data structures under the hood
+* No hidden performance penalties – allocation and copying are explicit
+* Straightforward integration with existing C code
 
 ## Learn more
 
-* [Installation](INSTALL.md) - how to build the Carp compiler
-* [The Compiler Manual](MANUAL.md) - how to compile code and configure your projects
-* [Carp Language Guide](LANGUAGE.md) - syntax and semantics of the language
-* [Libraries](LIBRARIES.md) - the various libraries that come built-in to Carp
-* [typograf.carp](/examples/typograf.carp) - a more complex example
+* [Installation](docs/Install.md) - how to build and configure the Carp compiler
+* [The Compiler Manual](docs/Manual.md) - how to compile code and configure your projects
+* [Carp Language Guide](docs/LanguageGuide.md) - syntax and semantics of the language
+* [Libraries](docs/Libraries.md) - how to work with libraries and modules
+* [Tooling](docs/Tooling.md) - supported editors
+* [Game Example](examples/reptile.carp) - a Snake clone in Carp
 
+The Carp REPL has built-in documentation, run ```(help)``` to access it!
 
-## A Small OpenGL/GLFW Example
+## A Very Small Example
 
 ```clojure
-(import gl)
-
-(defn init []
-  0f)
+(load-and-use SDL)
 
 (defn tick [state]
-  (+ state 0.15f))
+  (+ state 10))
 
-(defn draw [state]
-  (let [t @state
-        steps 100
-        step (/ 1f (itof steps))]
-    (for (i 0 steps)
-      (let [r (* step (itof i))
-            r2 (+ r step)]
-        (draw-line (* r (cosf (* t r)))
-                   (* r (sinf (* t r)))
-                   (* r2 (cosf (* t r2)))
-                   (* r2 (sinf (* t r2))))))))
+(defn draw [app rend state]
+  (bg rend &(rgb (/ @state 2) (/ @state 3) (/ @state 4))))
 
-(defn spin []
-  (glfw-app "Spin" init tick draw default-on-keys))
+(defn main []
+  (let [app (SDLApp.create "The Minimalistic Color Generator" 400 300)
+        state 0]
+    (SDLApp.run-with-callbacks &app SDLApp.quit-on-esc tick draw state)))
 ```
 
-To build this example, save it to a file called 'example.carp' and load it with ```(load-lisp "example.carp")```, then execute ```(bake-exe spin)``` to build an executable, or ```(spin)``` to run the program directly from the REPL.
+To build this example, save it to a file called 'example.carp' and load it with ```(load "example.carp")```, then execute ```(build)``` to build an executable, and ```(run)``` to start.
 
+### Language Designer & Lead Developer
+[Erik Svedäng](http://www.eriksvedang.com) ([@e_svedang](https://twitter.com/e_svedang))
+
+### Core Contributor
+[Veit Heller](http://veitheller.de) ([@hellerve](https://github.com/hellerve))
 
 ### Contributors
-
-* Erik Svedäng [@e_svedang](https://twitter.com/e_svedang)
 * Markus Gustavsson
 * Fyodor Shchukin
+* Anes Lihovac
+* Chris Hall
+* Tom Smeding
+* Dan Connolly
+* Reini Urban
+* Jonas Granquist
 
+Are you missing from the contributors list? Please send a pull request!
 
 ## License
 
-This Source Code Form is subject to the terms of the Mozilla Public
-License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at http://mozilla.org/MPL/2.0/.
+Copyright 2016 - 2018 Erik Svedäng
 
-© Erik Svedäng 2015 - 2016
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+The regular expression implementation as found in src/carp_regex.h are
+Copyright (C) 1994-2017 Lua.org, PUC-Rio under the terms of the MIT license.
+Details can be found in the License file LUA_LICENSE.

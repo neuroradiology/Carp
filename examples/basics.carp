@@ -1,0 +1,229 @@
+(use Int)
+(use Double)
+(use Float)
+(use Array)
+(use IO)
+
+(defn fib [n]
+  (if (< n 2)
+    1
+    (+ (fib (dec (dec n)))
+       (fib (dec n)))))
+
+(defmodule Things
+  (defn inside [s]
+    (let [msg (String.append s (String.copy "!"))]
+      (println (ref msg))))
+  (defn call []
+    (inside (String.copy "Hello"))))
+
+(defn use-doubles []
+  (println (ref (str (Double.to-int (Double.+ 2.0 3.0))))))
+
+(deftype Person
+    [name String
+     age Int])
+
+(defn use-person []
+  (let [me (Person.init (String.copy "Erik") 30)]
+    (println (Person.name (ref me)))))
+
+;; (defn heap-allocations []
+;;   (let [friend (Person.new (String.copy "Oscar") 30)]
+;;     ()))
+
+(defn refer-up []
+  (let [a 10
+        b (+ a 5)
+        c (* a b)]
+    c))
+
+(deftype Thing
+    [val Int])
+
+(defn set-stuff-in-array []
+  (let [xs [0 1 2 3 4 5 6 7 8 9]]
+    (do
+      (aset! &xs 4 666)
+      (println (ref (str (ref xs)))))))
+
+(defn more-array []
+  (let [xs [1 2 3 4]
+        xs2 (pop-back xs)]
+    (do
+      (println (refstr &(push-back xs2 500))))))
+
+(defn using-the-form-to-specialize [x y]
+  (+ x (the Double y)))
+
+(defn flip []
+  (random-between 0 2))
+
+(defn macrooo []
+  (let [msg "Print!"]
+        (cond
+          (< 10 1) (println "Don't print!")
+          (> 10 1) (println msg)
+          (println "Don't print!"))))
+
+(defn macrooo2 []
+  (for [x 1 3]
+    (for [y 10 100 20]
+      (println (ref (str (* x y)))))))
+
+(deftype A [s String])
+(use A)
+
+(deftype Peep [x Int
+               y String
+               z A])
+(use Peep)
+
+(defn calling-delete []
+  (let [plupp (Peep.init 10 (String.copy "PLUPP") (A.init (String.copy "w00t")))
+        poop [(Peep.init 10 (String.copy "hej") (A.init (String.copy "aha")))]
+        strings [(String.copy "a") (String.copy "b") (String.copy "c")]]
+      (do
+        (delete plupp)
+        (delete poop)
+        (Array.delete strings))))
+
+(defn updating []
+  (let [p1 (Peep.init 9999 (String.copy "jaha") (A.init (String.copy "mmm")))
+        p2 (Peep.update-x p1 inc)]
+    (println (ref (str @(Peep.x (ref p2)))))))
+
+(defn character []
+  (println (ref (Char.str \#))))
+
+(defn negative-numbers []
+  (let [x -10.0 y -20.0f z -30]
+    (* (* (to-int x) (to-int y)) z)))
+
+(defn square [x]
+  (Int.* x x))
+
+(defn endofunctor-mapping []
+  (let [stuff [1 2 3 4 5]
+        after (endo-map square stuff)]
+    (println (refstr &after))))
+
+(defn even? [x]
+  (= (Int.mod @x 2) 0))
+
+(defn add-with-refs [x y]
+  (Int.+ @x @y))
+
+(defn square-reffed [x]
+  (Int.* @x @x))
+
+(defn map-filter-reduce-stuff []
+  (let [stuff [3 5 8 9 10]
+        after (reduce add-with-refs 0 &(copy-map square-reffed &(filter even? stuff)))]
+    (do
+      (print "ANSWER: ")
+      (println (refstr after)))))
+
+(defn get-last-string [xs] ;; Should be generic preferably...
+  (let [i (dec (Array.count &xs))]
+    (String.copy (Array.nth &xs i))))
+
+(defn print-last-string []
+  (println &(get-last-string [(String.copy "NO") (String.copy "NO") (String.copy "YES")])))
+
+(defn exclaim [x] (String.append x @"!"))
+
+(deftype Simple [])
+(deftype Complex [x Int f Float d Double s String c Char])
+
+(defn print-structs []
+  (let [s (Simple.init)
+        c (Complex.init 12345 3.14f 99.99 @"yo" \x)]
+    (do
+      (println (ref (Simple.str &s)))
+      (println (ref (Complex.str &c))))))
+
+(deftype Inner [])
+(deftype Outer [as (Array Inner)])
+(defn convert-struct-with-array-member-to-string []
+  (let [b (Outer.init [(Inner.init) (Inner.init) (Inner.init)])]
+    (println (ref (Outer.str &b)))))
+
+(defn random-float []
+  (Float.random-between 10.0f 20.0f))
+
+(defn print-random-floats []
+  (do (System.seed-random (System.time))
+      (let [rands (Array.repeat 10 random-float)]
+        (println (ref (Array.str &rands))))))
+
+(deftype Age [x Int])
+
+(defn multiple-stringification-of-arrays []
+  (let-do [ints [10 3 75 40]
+           ages [(Age.init 10) (Age.init 3) (Age.init 75) (Age.init 40)]]
+    (IO.println &(str &ints))
+    (IO.println &(str &ages)) ;; this used to be a problem
+    ))
+
+(defn threading []
+  (do
+    (print "(==> 8 inc inc (Int./ 100) dec) = ")
+    (println (refstr (==> 8 inc inc (Int./ 100) dec)))
+    (print "(=> 8 inc inc (Int./ 2) dec) = ")
+    (println (refstr (=> 8 inc inc (Int./ 2) dec)))
+    (print "(==> 5 (Int.- 2)) = ")
+    (println (refstr (==> 5 (Int.- 2))))
+    (print "(=> 5 (Int.- 2)) = ")
+    (println (refstr (=> 5 (Int.- 2))))
+    ))
+
+;; This used to be a bug becuase of multisym:s getting the same type variables:
+(defn two-counts-in-same-func []
+  (let [a [[1]]
+        b [1 2 3]
+        c1 (count &a)
+        c2 (count &b)]
+    (println* &(str (+ c1 c2)))))
+
+(defn changing-target-of-ref []
+  (let [s1 @"hello"
+        s2 @"goodbye"
+        r &s1]
+    (do (set! r &s2)
+        (IO.println r))))
+
+(defn main []
+  (do (Things.call)
+      (use-doubles)
+      (println (ref (str (fib 10))))
+      (use-person)
+      ;;(heap-allocations)
+      (println (ref (str (refer-up))))
+      (println (ref (str (ref [10 20 30 40 50]))))
+      ;;(println (ref (str (ref (endo-map Thing.val [(Thing.init 100) (Thing.init 200)])))))
+      (println (ref (str (Int.mod 30 7))))
+      (set-stuff-in-array)
+      (more-array)
+      (macrooo)
+      (macrooo2)
+      (System.seed-random (System.time))
+      (println (ref (str (ref (repeat 10 flip)))))
+      (calling-delete)
+      (updating)
+      (character)
+      (println (ref (str (negative-numbers))))
+      (endofunctor-mapping)
+      (map-filter-reduce-stuff)
+      (print-last-string)
+      (let [stuff (replicate 3 "Yo")]
+        (println &(Array.str &(endo-map exclaim stuff))))
+      (print-structs)
+      (print-random-floats)
+      ;;(turn-any-array-into-string) <- BUGGY FOR NOW!
+      (convert-struct-with-array-member-to-string)
+      (threading)
+      (multiple-stringification-of-arrays)
+      (two-counts-in-same-func)
+      (changing-target-of-ref)
+      ))

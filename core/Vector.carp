@@ -1,0 +1,290 @@
+(defmodule Vector2
+  (deftype V2 [x Double, y Double])
+
+  (defn init [x y]
+    (V2.init x y))
+
+  (defn get-x [o]
+    @(V2.x o))
+
+  (defn get-y [o]
+    @(V2.y o))
+
+  (defn set-x [o v]
+    (V2.set-x o v))
+
+  (defn set-y [o v]
+    (V2.set-y o v))
+
+  (defn to-string [o]
+    (string-join @"Vector2(" (str @(V2.x o)) @", " (str @(V2.y o)) @")"))
+
+  (defn zero []
+    (V2.init 0.0 0.0))
+
+  (defn random []
+    (V2.init (random-between 0.0 1.0) (random-between 0.0 1.0)))
+
+  (defn add [a b]
+    (V2.init (+ @(V2.x a) @(V2.x b))
+             (+ @(V2.y a) @(V2.y b))))
+
+  (defn sub [a b]
+    (V2.init (- @(V2.x a) @(V2.x b))
+             (- @(V2.y a) @(V2.y b))))
+
+  (defn mul [a n]
+    (V2.init (* @(V2.x a) n)
+             (* @(V2.y a) n)))
+
+  (defn div [a n]
+    (V2.init (/ @(V2.x a) n)
+             (/ @(V2.y a) n)))
+
+  (defn = [a b]
+    (and (Double.= @(V2.x a) @(V2.x b))
+         (Double.= @(V2.y a) @(V2.y b))))
+
+  (defn /= [a b]
+    (not (= a b)))
+
+  (defn approx [a b]
+    (and (Double.approx @(V2.x a) @(V2.x b))
+         (Double.approx @(V2.y a) @(V2.y b))))
+
+  (defn mag-sq [o]
+    (let [x @(V2.x o)
+          y @(V2.y o)]
+      (+ (* x x) (* y y))))
+
+  (defn mag [o]
+    (Double.sqrt (mag-sq o)))
+
+  (defn normalize [o]
+    (let [m (mag o)]
+      (if (= m 0.0)
+        (V2.copy o)
+        (div o m))))
+
+  (defn dist [a b]
+    (let [s (sub b a)]
+      (mag &s)))
+
+  (defn heading [a]
+    (Double.atan2 @(V2.y a) @(V2.x a)))
+
+  (defn rotate [a n]
+    (let [h (+ (heading a) n)
+          m (mag a)]
+      (V2.init (* (Double.cos h) m) (* (Double.sin h) m))))
+
+  (defn dot [x y]
+    (+ (* @(V2.x x) @(V2.x y))
+       (* @(V2.y x) @(V2.y y))))
+
+  (defn angle-between [a b]
+    (let [dmm (/ (dot a b) (* (mag a) (mag b)))]
+      (Double.acos (Double.clamp -1.0 1.0 dmm))))
+
+  (defn anti-parallel? [a b]
+    (= (angle-between a b) Double.pi))
+
+  (defn parallel? [a b]
+    (= (angle-between a b) 0.0))
+
+  (defn perpendicular? [a b]
+    (= (angle-between a b) (/ Double.pi 2.0)))
+
+  (defn lerp [a b amnt]
+    (init (* (- @(V2.x b) @(V2.x a)) amnt)
+          (* (- @(V2.y b) @(V2.y a)) amnt)))
+)
+
+(defmodule Vector3
+  (deftype V3 [x Double, y Double, z Double])
+
+  (defn init [x y z]
+    (V3.init x y z))
+
+  (defn to-string [o]
+    (string-join @"Vector3(" (str @(V3.x o)) @", " (str @(V3.y o))
+                 @", " (str @(V3.z o)) @")"))
+
+  (defn zero []
+    (V3.init 0.0 0.0 0.0))
+
+  (defn random []
+    (V3.init (random-between 0.0 1.0) (random-between 0.0 1.0) (random-between 0.0 1.0)))
+
+  (defn = [a b]
+    (and (Double.= @(V3.x a) @(V3.x b))
+         (and (Double.= @(V3.y a) @(V3.y b))
+              (Double.= @(V3.z a) @(V3.z b)))))
+
+  (defn /= [a b]
+    (not (= a b)))
+
+  (defn add [a b]
+    (V3.init (+ @(V3.x a) @(V3.x b))
+             (+ @(V3.y a) @(V3.y b))
+             (+ @(V3.z a) @(V3.z b))))
+
+  (defn sub [a b]
+    (V3.init (- @(V3.x a) @(V3.x b))
+             (- @(V3.y a) @(V3.y b))
+             (- @(V3.z a) @(V3.z b))))
+
+  (defn mul [a n]
+    (V3.init (* @(V3.x a) n)
+             (* @(V3.y a) n)
+             (* @(V3.z a) n)))
+
+  (defn div [a n]
+    (V3.init (/ @(V3.x a) n)
+             (/ @(V3.y a) n)
+             (/ @(V3.z a) n)))
+
+  (defn mag-sq [o]
+    (let [x @(V3.x o)
+          y @(V3.y o)
+          z @(V3.z o)]
+      (+ (* x x) (+ (* y y) (* z z)))))
+
+  (defn mag [o]
+    (Double.sqrt (mag-sq o)))
+
+  (defn normalize [o]
+    (let [m (mag o)]
+      (if (= m 0.0)
+        (V3.copy o)
+        (div o m))))
+
+  (defn cross [x y]
+    (V3.init
+      (- (* @(V3.y x) @(V3.z y))
+         (* @(V3.z x) @(V3.y y)))
+      (- (* @(V3.z x) @(V3.x y))
+         (* @(V3.x x) @(V3.z y)))
+      (- (* @(V3.x x) @(V3.y y))
+         (* @(V3.y x) @(V3.x y)))))
+
+  (defn dot [x y]
+    (+ (* @(V3.x x) @(V3.x y))
+       (+ (* @(V3.y x) @(V3.y y))
+          (* @(V3.z x) @(V3.z y)))))
+
+  (defn angle-between [a b]
+    (let [dmm (/ (dot a b) (* (mag a) (mag b)))]
+      (Double.acos (Double.clamp -1.0 1.0 dmm))))
+
+  (defn anti-parallel? [a b]
+    (= (angle-between a b) Double.pi))
+
+  (defn parallel? [a b]
+    (= (angle-between a b) 0.0))
+
+  (defn perpendicular? [a b]
+    (= (angle-between a b) (/ Double.pi 2.0)))
+
+  (defn lerp [a b amnt]
+    (init (* (- @(V3.x b) @(V3.x a)) amnt)
+          (* (- @(V3.y b) @(V3.y a)) amnt)
+          (* (- @(V3.z b) @(V3.z a)) amnt)))
+)
+
+(defmodule VectorN
+  (deftype VN [n Int, v (Array Double)])
+
+  (defn init [n v]
+    (VN.init n v))
+
+  (defn zero-sized [n]
+    (let [z 0.0]
+      (VN.init n (Array.replicate n &z))))
+
+  (defn unit-random []
+    (random-between 0.0 1.0))
+
+  (defn random-sized [n]
+    (VN.init n (Array.repeat n unit-random)))
+
+
+  (defn to-string [o]
+    (string-join @"VectorN(dim=" (str @(VN.n o)) @", vals=" (str (VN.v o))
+                  @")"))
+
+  (defn zip- [f a b]
+    (let [total []]
+      (do
+        (for [i 0 (Array.count a)]
+          (set! total (Array.push-back @&total (f @(Array.nth a i) @(Array.nth b i)))))
+        (VN.init (Array.count a) total))))
+
+  (defn zip [f a b]
+    (if (= @(VN.n a) @(VN.n b))
+      (zip- f (VN.v a) (VN.v b))
+      (do
+        (IO.println "Error: vectors are of wrong dimensionality")
+        (VN.copy a))))
+
+  (defn = [a b]
+    (and (Int.= @(VN.n a) @(VN.n b))
+         (Array.= (VN.v a) (VN.v b))))
+
+  (defn /= [a b]
+    (not (= a b)))
+
+  (defn add [a b]
+    (zip + a b))
+
+  (defn sub [a b]
+    (zip - a b))
+
+  (defn mul [a n]
+    (zip- * (VN.v a) &(Array.replicate @(VN.n a) &n)))
+
+  (defn div [a n]
+    (zip- / (VN.v a) &(Array.replicate @(VN.n a) &n)))
+
+  (defn square- [n]
+    (* @n @n))
+
+  (defn add- [x y]
+    (+ @x @y))
+
+  (defn mag-sq [o]
+    (Array.reduce add- 0.0 &(Array.copy-map square- (VN.v o))))
+
+  (defn mag [o]
+    (Double.sqrt (mag-sq o)))
+
+  (defn dist [a b]
+    (let [s (sub b a)]
+      (mag &s)))
+
+  (defn normalize [o]
+    (let [m (mag o)]
+      (if (= m 0.0)
+        (VN.copy o)
+        (div o m))))
+
+  (defn dot [x y]
+    (Array.reduce add- 0.0 (VN.v &(zip * x y))))
+
+  (defn angle-between [a b]
+    (let [dmm (/ (dot a b) (* (mag a) (mag b)))]
+      (Double.acos (Double.clamp -1.0 1.0 dmm))))
+
+  (defn anti-parallel? [a b]
+    (= (angle-between a b) Double.pi))
+
+  (defn parallel? [a b]
+    (= (angle-between a b) 0.0))
+
+  (defn perpendicular? [a b]
+    (= (angle-between a b) (/ Double.pi 2.0)))
+
+  (defn lerp [a b amnt]
+    (init @(VN.n a) @(VN.v &(zip- * &(Array.replicate @(VN.n a) &amnt)
+                                   (VN.v &(zip - b a))))))
+)

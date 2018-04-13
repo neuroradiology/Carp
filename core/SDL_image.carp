@@ -1,0 +1,7 @@
+(system-include "SDL2/SDL_image.h")
+(add-lib "-lSDL2_image")
+
+(defmodule IMG
+  (register load-texture (Fn [(Ptr SDL_Renderer) (Ptr Char)] (Ptr SDL_Texture)) "IMG_LoadTexture")
+  (register load (Fn [(Ptr Char)] (Ptr SDL_Surface)) "IMG_Load")
+  )

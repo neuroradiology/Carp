@@ -1,0 +1,70 @@
+(load "Test.carp")
+(use Test)
+
+(def g 0) ;; Global variable used to detect if too many forms are evaluated.
+
+(defn inc-true []
+  (do (update! g inc)
+      true))
+
+(defn inc-false []
+  (do (update! g inc)
+      false))
+
+(defn short-circuit-and []
+  (do (set! g 0)
+      (ignore (and (inc-false) (inc-true))) ;; Only the first form should be evaluated.
+      g))
+
+(defn short-circuit-or []
+  (do (set! g 0)
+      (ignore (or (inc-true) (inc-false))) ;; Only the first form should be evaluated.
+      g))
+
+(defn eval-both-expr-in-and []
+  (do (set! g 0)
+      (ignore (and (inc-true) (inc-true))) ;; Both forms evaluate.
+      g))
+
+(defn eval-both-expr-in-or []
+  (do (set! g 0)
+      (ignore (or (inc-false) (inc-false))) ;; Both forms evaluate.
+      g))
+
+(defn vararg-and []
+  (do (set! g 0)
+      (ignore (and* (inc-true) (inc-true) (inc-false) (inc-true) (inc-true))) ;; 3 expressions will evaluate.
+      g))
+
+(defn vararg-or []
+  (do (set! g 0)
+      (ignore (or* (inc-false) (inc-false) (inc-true) (inc-false) (inc-false))) ;; 3 expressions will evaluate.
+      g))
+
+(defn main []
+  (with-test test
+    (assert-equal test
+                  1
+                  (short-circuit-and)
+                  "'and' short circuits")
+    (assert-equal test
+                  1
+                  (short-circuit-or)
+                  "'or' short circuits")
+    (assert-equal test
+                  2
+                  (eval-both-expr-in-and)
+                  "'and' can evaluate second expr")
+    (assert-equal test
+                  2
+                  (eval-both-expr-in-or)
+                  "'or' can evaluate second expr")
+    (assert-equal test
+                  3
+                  (vararg-and)
+                  "'and*' works")
+    (assert-equal test
+                  3
+                  (vararg-or)
+                  "'or*' works")
+    ))

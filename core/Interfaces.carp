@@ -1,0 +1,63 @@
+;; The 'copy' and 'str' interfaces are defined internally:
+;;(definterface copy (λ [&a] a))
+;;(definterface str (λ [a] String))
+
+(definterface = (λ [a a] Bool))
+(definterface /= (λ [a a] Bool))
+
+(definterface add-ref (λ [&a &a] a))
+(definterface sub-ref (λ [&a &a] a))
+(definterface mul-ref (λ [&a &a] a))
+(definterface div-ref (λ [&a &a] a))
+
+(definterface + (λ [a a] a))
+(definterface - (λ [a a] a))
+(definterface * (λ [a a] a))
+(definterface / (λ [a a] a))
+(definterface mod (λ [a a] a))
+
+(definterface < (λ [a a] Bool))
+(definterface > (λ [a a] Bool))
+
+(definterface inc (λ [a] a))
+(definterface dec (λ [a] a))
+
+(definterface format (λ [&String a] String))
+(definterface from-string (λ [&String] a))
+
+(definterface zero (λ [] a))
+(definterface random (Fn [] a))
+(definterface random-between (Fn [a a] a))
+
+(definterface pi a)
+
+
+
+;; The following functions make use of the interfaces
+
+(defn <= [a b]
+  (or (< a b)
+      (= a b)))
+
+(defn >= [a b]
+  (or (> a b)
+      (= a b)))
+
+(defn cmp [a b]
+  (if (= a b)
+    0
+    (if (< a b) -1 1)))
+
+(defn max [a b]
+  (if (> a b) a b))
+
+(defn min [a b]
+  (if (< a b) a b))
+
+(defn id [x] x)
+
+(defn null? [p]
+  (Pointer.eq NULL (the (Ptr t) p)))
+
+(defn not-null? [p]
+  (not (null? p)))

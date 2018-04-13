@@ -1,0 +1,28 @@
+(Project.config "print-ast" true)
+(Debug.sanitize-addresses)
+
+(def s "I'm a global string...")
+
+(deftype A [x Int])
+(def a (A.init 666))
+
+;;(Debug.log-memory-balance! true)
+
+(def q [1 2 3 4 5])
+(def stuff [(A.init 10) (A.init 20) (A.init 30)])
+
+(defn main []
+  (Debug.assert-balanced
+   (do
+     ;;(IO.println s)
+     (IO.println &(A.str &a))
+     ;;(set! a (A.init 123))
+     ;;(IO.println &(A.str &a))
+     (IO.println &(str &q))
+     (IO.println &(str &stuff))
+     )))
+
+;; (defn f [x]
+;;   (do
+;;     (IO.println &(Int.str x))
+;;     @gs))

@@ -1,0 +1,7 @@
+(defmodule Geometry
+  (defn degree-to-radians [n]
+    (Double.* n (Double./ Double.pi 180.0)))
+
+  (defn radians-to-degree [n]
+    (Double.* n (Double./ 180.0 Double.pi)))
+)

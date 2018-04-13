@@ -1,47 +1,85 @@
-(import gl)
+(use IO)
+(use System)
+(use Int)
+(use Double)
+(use Array)
 
-(defn draw-ship [ship]
-  (let [pos (Ship-get-pos ship)]
-    (draw-rect (Vec2-get-x pos)
-               (Vec2-get-y pos)
-               10f
-               10f)))
+(load "SDL.carp")
+(load "SDL_image.carp")
 
-(defstruct Ship [pos :Vec2])
+(Project.config "title" "Game")
 
-(defn generate-ships []
-  [(Ship (Vec2 100f 300f))
-   (Ship (Vec2 150f 100f))
-   (Ship (Vec2 200f 150f))
-   (Ship (Vec2 250f 050f))
-   (Ship (Vec2 300f 100f))])
+(def rand-max 400)
 
-(defn t []
-  (dtof (glfwGetTime)))
+(defn r []
+  (the Int (random-between 0 rand-max)))
 
-(defn draw [state]
-  (do
-    ;;(draw-line 300f 200f (+ 300f (* 100.0f (sinf (t)))) (+ 200f (* 100.0f (cosf (t)))))
-    (draw-circle 200f 200f 100f)
-    (let [ships state]
-      (domap draw-ship ships))))
+(defn random-lines []
+  (let [p1 (SDL.point (r) (r))
+        p2 (SDL.point (r) (r))
+        p3 (SDL.point (r) (r))]
+    [p1 p2 p3 p1]))
 
-(defn speed [] 1.0f)
+(deftype Images
+    [img1 (Ptr SDL_Texture)
+     img2 (Ptr SDL_Texture)])
 
-(defn move-vec2 [v]
-  (let [x (Vec2-get-y &v)]
-    (Vec2-set-y v (+ (speed) x))))
+(def images (Images.init NULL NULL))
 
-(defn move [ship]
-  (Ship-update-pos ship move-vec2))
+(defn draw [app rend state-ref]
+  (let [rect (SDL.rect 32 32 (- 512 64) (- 512 64))]
+    (do
+      (SDL.set-render-draw-blend-mode rend SDL.blend-mode-add)
+      (SDL.set-render-draw-color rend 0 0 0 255)
+      (SDL.render-clear rend)
+      (SDL.set-render-draw-color rend 200 250 255 255)
+      (SDL.render-fill-rect rend (address rect))
+      (SDL.set-render-draw-color rend 100 50 255 155)
+      (let [mouse-state (SDL.MouseState.get)
+            x @(SDL.MouseState.x &mouse-state)
+            rects [(SDL.rect x 48 16 16)
+                   (SDL.rect (* x 2) 80 16 16)
+                   (SDL.rect (* x 4) 112 16 16)
+                   (SDL.rect (* x 8) 144 16 16)]
+            n (count &rects)]
+        (SDL.render-fill-rects rend (raw rects) n))
+      (SDL.set-render-draw-color rend 255 50 100 255)
+      (for [x 0 512 16]
+        (do
+          (SDL.render-draw-line rend x 0 512 512)
+          (SDL.render-draw-line rend 512 (+ 256 (/ x 2)) 0 512)))
+      (SDL.set-render-draw-color rend 0 0 0 255)
+      (let [lines (random-lines)
+            n (count &lines)]
+        (SDL.render-draw-lines rend (raw lines) n))
+      (let [img @(Images.img1 &images)]
+        (SDL.render-copy-ex rend
+                            img
+                            (address (SDL.dimensions img))
+                            (address (SDL.rect 100 100 300 300))
+                            (* 0.1 (from-int (SDL.get-ticks)))
+                            (address (SDL.point 150 150))
+                            SDL.flip-none)))))
 
-(defn update [state]
-  (map move state))
+(defn handle-events [app]
+  (foreach [event &(SDL.Event.all)]
+    (case (SDL.Event.type event)
+      SDL.Event.quit (SDLApp.stop app)
+      SDL.Event.key-down (let [key (SDL.Event.keycode event)]
+                           (case key
+                             SDL.Keycode.escape (SDLApp.stop app)
+                             SDL.Keycode.backspace (println "!")
+                             (println "Unrecognized key.")))
+      () ;;(println "Some other event happened...")
+      )))
 
-(defn setup []
-  (do (glOrtho 0.0 640.0 480.0 0.0 1.0 -1.0)
-      (generate-ships)))
+(defn tick [state] state)
 
-(defn game []
-  (glfw-app "The Attack of the Space Worms" setup update draw default-on-keys))
-
+(defn main []
+  (let [app (SDLApp.create "~ CARP ~" 512 512)
+        rend @(SDLApp.renderer &app)
+        initial-state 0]
+    (do
+      (set! images (Images.init (IMG.load-texture rend (cstr "./img/square.png"))
+                                (IMG.load-texture rend (cstr "./img/carp_logo_969_no_texture.png"))))
+      (SDLApp.run-with-callbacks &app handle-events tick draw initial-state))))
